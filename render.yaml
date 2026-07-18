@@ -1,0 +1,40 @@
+services:
+  - type: web
+    name: academia-belfort-backend
+    runtime: node
+    plan: free
+    region: oregon
+    buildCommand: npm install && npm run build
+    startCommand: npm run start:prod
+    healthCheckPath: /
+    envVars:
+      # Domínio de produção do site (Next.js) — usado só pro CORS dos endpoints públicos
+      # (POST /matricula, /cortesia, /avaliacao-fisica, /avaliacao-nutricional).
+      - key: FRONTEND_ORIGIN
+        sync: false
+      # URL do Web App do Apps Script (a mesma URL nas quatro variáveis — ver comentário
+      # no topo de apps-script/Code.gs).
+      - key: APPS_SCRIPT_URL_MATRICULA
+        sync: false
+      - key: APPS_SCRIPT_URL_CORTESIA
+        sync: false
+      - key: APPS_SCRIPT_URL_AVALIACAO
+        sync: false
+      - key: APPS_SCRIPT_URL_AVALIACAO_NUTRICIONAL
+        sync: false
+      # Precisa bater com SHARED_SECRET no topo do Code.gs.
+      - key: APPS_SCRIPT_SHARED_SECRET
+        sync: false
+      # Opcionais — sem eles o lembrete de aula por e-mail só fica desativado (não quebra o resto).
+      - key: GMAIL_USER
+        sync: false
+      - key: GMAIL_APP_PASSWORD
+        sync: false
+      # Login da área administrativa.
+      - key: ADMIN_USER
+        sync: false
+      - key: ADMIN_PASSWORD_HASH
+        sync: false
+      # Gerado automaticamente pelo Render no primeiro deploy — não precisa preencher.
+      - key: JWT_SECRET
+        generateValue: true
