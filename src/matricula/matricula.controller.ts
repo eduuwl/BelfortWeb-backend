@@ -1,8 +1,10 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
+  Param,
   Post,
   Query,
   UseGuards,
@@ -26,5 +28,13 @@ export class MatriculaController {
   @UseGuards(JwtAuthGuard)
   async list(@Query('page') page?: string, @Query('limit') limit?: string) {
     return this.matriculaService.list(page, limit);
+  }
+
+  @Delete(':id')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(200)
+  async delete(@Param('id') id: string) {
+    await this.matriculaService.deleteById(id);
+    return { success: true };
   }
 }

@@ -1,8 +1,10 @@
 /**
- * Academia Belfort — recebe os POSTs do backend NestJS (rotas /cortesia, /matricula e
- * /avaliacao-fisica) e grava cada um numa aba diferente desta planilha. Também expõe uma
- * leitura (doGet) protegida por segredo, usada pelo backend para checar duplicidade de CPF,
- * montar os lembretes de aula por e-mail e alimentar a área administrativa.
+ * Academia Belfort — recebe os POSTs do backend NestJS (rotas /cortesia, /matricula,
+ * /avaliacao-fisica e /avaliacao-nutricional) e grava cada um numa aba diferente desta planilha.
+ * Também expõe uma leitura (doGet) protegida por segredo, usada pelo backend para checar
+ * duplicidade de CPF, montar os lembretes de aula por e-mail e alimentar a área administrativa.
+ * Suporta também update por id (confirmar presença) e exclusão por id — exclusão é soft-delete:
+ * a linha é esvaziada e o conteúdo original vai pra aba "Excluídos" como backup.
  *
  * Como implantar:
  * 1. Crie uma planilha nova no Google Sheets.
@@ -13,8 +15,8 @@
  *    Executar como: Eu. Quem pode acessar: Qualquer pessoa.
  * 6. Autorize as permissões pedidas (é a sua própria planilha).
  * 7. Copie a URL do App da Web e cole em backend/.env, nas variáveis:
- *    APPS_SCRIPT_URL_CORTESIA, APPS_SCRIPT_URL_MATRICULA e APPS_SCRIPT_URL_AVALIACAO
- *    (é a mesma URL para as três).
+ *    APPS_SCRIPT_URL_CORTESIA, APPS_SCRIPT_URL_MATRICULA, APPS_SCRIPT_URL_AVALIACAO e
+ *    APPS_SCRIPT_URL_AVALIACAO_NUTRICIONAL (é a mesma URL pras quatro).
  * 8. Cole o mesmo valor de SHARED_SECRET em backend/.env, na variável APPS_SCRIPT_SHARED_SECRET.
  *
  * Se editar este arquivo depois de já ter implantado uma vez, é preciso reimplantar:
@@ -28,7 +30,9 @@
  */
 
 var SHARED_SECRET = 'TROQUE_ESTE_SEGREDO';
-var CODE_VERSION = 'v7-presenca';
+var CODE_VERSION = 'v9-exclusao';
+var EXCLUIDOS_SHEET = 'Excluídos';
+var EXCLUIDOS_HEADERS = ['origem', 'excluidoEm', 'dadosOriginais'];
 
 var CORTESIA_HEADERS = [
   'timestamp', 'nome', 'whatsapp', 'email', 'cpf', 'modalidade', 'horario', 'dia', 'datasAula', 'limitacao',
@@ -48,6 +52,8 @@ var TIPOS = {
   matricula: { sheet: 'Matrícula', headers: MATRICULA_HEADERS },
   cortesia: { sheet: 'Cortesia', headers: CORTESIA_HEADERS },
   'avaliacao-fisica': { sheet: 'Avaliação Física', headers: AVALIACAO_HEADERS },
+  // Mesmo formato de campos da avaliação física, só muda a aba (e o valor, que já vem no payload).
+  'avaliacao-nutricional': { sheet: 'Avaliação Nutricional', headers: AVALIACAO_HEADERS },
 };
 
 function doPost(e) {
@@ -56,6 +62,9 @@ function doPost(e) {
 
     if (data.acao === 'confirmar-presenca') {
       return atualizarPresencaCortesia(data);
+    }
+    if (data.acao === 'excluir') {
+      return excluirRegistro(data);
     }
 
     var tipo = TIPOS[data.tipo];
@@ -88,6 +97,47 @@ function atualizarPresencaCortesia(data) {
 
   var colIndex = TIPOS.cortesia.headers.indexOf('presencaConfirmada') + 1;
   sheet.getRange(rowNumber, colIndex).setValue("'" + (data.confirmada ? 'true' : 'false'));
+
+  return jsonResponse({ success: true });
+}
+
+// Não usa sheet.deleteRow() de propósito: apagar a linha de verdade deslocaria o número de
+// todas as linhas abaixo, e esse número é o "id" que o backend usa pra localizar registros
+// (inclusive pra confirmar presença). Em vez disso, a linha é esvaziada (o backend já trata
+// timestamp vazio como "registro apagado" e filtra da listagem) e o conteúdo original vai
+// pra aba "Excluídos", como backup recuperável manualmente.
+function excluirRegistro(data) {
+  var tipo = TIPOS[data.tipo];
+  if (!tipo) {
+    return jsonResponse({ success: false, error: 'tipo desconhecido: ' + data.tipo });
+  }
+
+  var rowNumber = parseInt(data.id, 10);
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(tipo.sheet);
+  if (!rowNumber || rowNumber < 2 || !sheet || rowNumber > sheet.getLastRow()) {
+    return jsonResponse({ success: false, error: 'not_found' });
+  }
+
+  var range = sheet.getRange(rowNumber, 1, 1, tipo.headers.length);
+  var values = range.getValues()[0];
+  if (values[0] === '') {
+    // já estava vazia (apagada antes, ou linha nunca preenchida)
+    return jsonResponse({ success: false, error: 'not_found' });
+  }
+
+  var obj = {};
+  tipo.headers.forEach(function (key, i) {
+    obj[key] = values[i];
+  });
+
+  var excluidos = getOrCreateSheet(EXCLUIDOS_SHEET, EXCLUIDOS_HEADERS);
+  excluidos.appendRow([
+    "'" + tipo.sheet,
+    "'" + new Date().toLocaleString('pt-BR', { timeZone: 'America/Belem' }),
+    "'" + JSON.stringify(obj),
+  ]);
+
+  range.clearContent();
 
   return jsonResponse({ success: true });
 }

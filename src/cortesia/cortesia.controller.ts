@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   Param,
@@ -39,6 +40,14 @@ export class CortesiaController {
     @Body() dto: UpdatePresencaDto,
   ) {
     await this.cortesiaService.updatePresenca(id, dto.confirmada);
+    return { success: true };
+  }
+
+  @Delete(':id')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(200)
+  async delete(@Param('id') id: string) {
+    await this.cortesiaService.deleteById(id);
     return { success: true };
   }
 }

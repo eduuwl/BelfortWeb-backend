@@ -6,7 +6,8 @@ import {
 } from '@nestjs/common';
 import { parsePtBrTimestampToIso } from '../common/parse-pt-br-timestamp';
 
-export type AppsScriptTipo = 'matricula' | 'cortesia' | 'avaliacao-fisica';
+export type AppsScriptTipo =
+  'matricula' | 'cortesia' | 'avaliacao-fisica' | 'avaliacao-nutricional';
 
 export type AppsScriptRecord = Record<string, string> & {
   id: string;
@@ -32,6 +33,7 @@ export class AppsScriptService {
       matricula: 'APPS_SCRIPT_URL_MATRICULA',
       cortesia: 'APPS_SCRIPT_URL_CORTESIA',
       'avaliacao-fisica': 'APPS_SCRIPT_URL_AVALIACAO',
+      'avaliacao-nutricional': 'APPS_SCRIPT_URL_AVALIACAO_NUTRICIONAL',
     };
     const url = process.env[envVar[tipo]];
     if (!url) {
@@ -109,28 +111,51 @@ export class AppsScriptService {
 
   async fetchRecords(tipo: AppsScriptTipo): Promise<AppsScriptRecord[]> {
     const rows = await this.fetchRows(tipo);
-    return rows.map((row, index) => ({
-      ...row,
-      id: String(index + 2),
-      createdAt: parsePtBrTimestampToIso(row.timestamp ?? ''),
-    }));
+    return rows
+      .map((row, index): AppsScriptRecord => ({
+        ...row,
+        id: String(index + 2),
+        createdAt: parsePtBrTimestampToIso(row.timestamp ?? ''),
+      }))
+      .filter((record) => record.timestamp !== '');
   }
 
   async updateCortesiaPresenca(id: string, confirmada: boolean): Promise<void> {
-    const url = this.urlFor('cortesia');
+    await this.postAction(
+      'cortesia',
+      { acao: 'confirmar-presenca', id, confirmada },
+      'Falha ao atualizar a presença na planilha',
+      'Registro de cortesia não encontrado',
+    );
+  }
+
+  async deleteRecord(tipo: AppsScriptTipo, id: string): Promise<void> {
+    await this.postAction(
+      tipo,
+      { acao: 'excluir', tipo, id },
+      'Falha ao excluir o registro na planilha',
+      'Registro não encontrado',
+    );
+  }
+
+  private async postAction(
+    tipo: AppsScriptTipo,
+    body: Record<string, unknown>,
+    failureMessage: string,
+    notFoundMessage: string,
+  ): Promise<void> {
+    const url = this.urlFor(tipo);
     const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ acao: 'confirmar-presenca', id, confirmada }),
+      body: JSON.stringify(body),
     });
 
     if (!response.ok) {
       this.logger.error(
-        `Apps Script (cortesia) respondeu ${response.status} ao atualizar presença`,
+        `Apps Script (${tipo}) respondeu ${response.status} na ação "${String(body.acao)}"`,
       );
-      throw new InternalServerErrorException(
-        'Falha ao atualizar a presença na planilha',
-      );
+      throw new InternalServerErrorException(failureMessage);
     }
 
     const raw = await response.text();
@@ -139,17 +164,15 @@ export class AppsScriptService {
       data = JSON.parse(raw) as AppsScriptWriteResponse;
     } catch {
       throw new InternalServerErrorException(
-        'A planilha não confirmou a atualização. Reimplante o Code.gs (veja o comentário no topo do arquivo).',
+        'A planilha não confirmou a operação. Reimplante o Code.gs (veja o comentário no topo do arquivo).',
       );
     }
 
     if (!data.success) {
       if (data.error === 'not_found') {
-        throw new NotFoundException('Registro de cortesia não encontrado');
+        throw new NotFoundException(notFoundMessage);
       }
-      throw new InternalServerErrorException(
-        'Falha ao atualizar a presença na planilha',
-      );
+      throw new InternalServerErrorException(failureMessage);
     }
   }
 }

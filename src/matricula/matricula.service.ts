@@ -21,4 +21,8 @@ export class MatriculaService {
     const records = await this.appsScript.fetchRecords('matricula');
     return paginate(records, page, limit);
   }
+
+  async deleteById(id: string): Promise<void> {
+    await this.appsScript.deleteRecord('matricula', id);
+  }
 }

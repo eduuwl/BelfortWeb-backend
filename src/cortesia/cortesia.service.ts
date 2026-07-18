@@ -51,6 +51,10 @@ export class CortesiaService {
     await this.appsScript.updateCortesiaPresenca(id, confirmada);
   }
 
+  async deleteById(id: string): Promise<void> {
+    await this.appsScript.deleteRecord('cortesia', id);
+  }
+
   async forward(dto: CreateCortesiaDto): Promise<void> {
     const rows = await this.appsScript.fetchRows('cortesia');
     const cpf = onlyDigits(dto.cpf);

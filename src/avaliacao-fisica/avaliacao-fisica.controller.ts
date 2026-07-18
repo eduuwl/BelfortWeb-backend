@@ -1,8 +1,10 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
+  Param,
   Post,
   Query,
   UseGuards,
@@ -28,5 +30,13 @@ export class AvaliacaoFisicaController {
   @UseGuards(JwtAuthGuard)
   async list(@Query('page') page?: string, @Query('limit') limit?: string) {
     return this.avaliacaoFisicaService.list(page, limit);
+  }
+
+  @Delete(':id')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(200)
+  async delete(@Param('id') id: string) {
+    await this.avaliacaoFisicaService.deleteById(id);
+    return { success: true };
   }
 }
