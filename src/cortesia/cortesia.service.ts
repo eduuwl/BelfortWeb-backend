@@ -1,11 +1,55 @@
 import { ConflictException, Injectable } from '@nestjs/common';
 import { AppsScriptService } from '../apps-script/apps-script.service';
 import { onlyDigits } from '../common/only-digits';
+import { Paginated, paginate } from '../common/paginate';
 import { CreateCortesiaDto } from './dto/create-cortesia.dto';
+
+export interface CortesiaRecord {
+  timestamp: string;
+  nome: string;
+  whatsapp: string;
+  email: string;
+  cpf: string;
+  modalidade: string;
+  horario: string;
+  dia: string;
+  datasAula: string;
+  limitacao: string;
+  id: string;
+  createdAt: string;
+  presencaConfirmada: boolean;
+}
 
 @Injectable()
 export class CortesiaService {
   constructor(private readonly appsScript: AppsScriptService) {}
+
+  async list(
+    page?: string,
+    limit?: string,
+  ): Promise<Paginated<CortesiaRecord>> {
+    const records = await this.appsScript.fetchRecords('cortesia');
+    const withPresenca: CortesiaRecord[] = records.map((record) => ({
+      timestamp: record.timestamp ?? '',
+      nome: record.nome ?? '',
+      whatsapp: record.whatsapp ?? '',
+      email: record.email ?? '',
+      cpf: record.cpf ?? '',
+      modalidade: record.modalidade ?? '',
+      horario: record.horario ?? '',
+      dia: record.dia ?? '',
+      datasAula: record.datasAula ?? '',
+      limitacao: record.limitacao ?? '',
+      id: record.id,
+      createdAt: record.createdAt,
+      presencaConfirmada: record.presencaConfirmada === 'true',
+    }));
+    return paginate(withPresenca, page, limit);
+  }
+
+  async updatePresenca(id: string, confirmada: boolean): Promise<void> {
+    await this.appsScript.updateCortesiaPresenca(id, confirmada);
+  }
 
   async forward(dto: CreateCortesiaDto): Promise<void> {
     const rows = await this.appsScript.fetchRows('cortesia');

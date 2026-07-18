@@ -4,21 +4,21 @@ import {
   AppsScriptService,
 } from '../apps-script/apps-script.service';
 import { Paginated, paginate } from '../common/paginate';
-import { CreateMatriculaDto } from './dto/create-matricula.dto';
+import { CreateAvaliacaoFisicaDto } from './dto/create-avaliacao-fisica.dto';
 
 @Injectable()
-export class MatriculaService {
+export class AvaliacaoFisicaService {
   constructor(private readonly appsScript: AppsScriptService) {}
 
-  async forward(dto: CreateMatriculaDto): Promise<void> {
-    await this.appsScript.forward('matricula', { ...dto });
+  async forward(dto: CreateAvaliacaoFisicaDto): Promise<void> {
+    await this.appsScript.forward('avaliacao-fisica', { ...dto });
   }
 
   async list(
     page?: string,
     limit?: string,
   ): Promise<Paginated<AppsScriptRecord>> {
-    const records = await this.appsScript.fetchRecords('matricula');
+    const records = await this.appsScript.fetchRecords('avaliacao-fisica');
     return paginate(records, page, limit);
   }
 }

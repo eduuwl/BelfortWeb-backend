@@ -2,13 +2,25 @@ import {
   Injectable,
   InternalServerErrorException,
   Logger,
+  NotFoundException,
 } from '@nestjs/common';
+import { parsePtBrTimestampToIso } from '../common/parse-pt-br-timestamp';
 
-export type AppsScriptTipo = 'matricula' | 'cortesia';
+export type AppsScriptTipo = 'matricula' | 'cortesia' | 'avaliacao-fisica';
+
+export type AppsScriptRecord = Record<string, string> & {
+  id: string;
+  createdAt: string;
+};
 
 interface AppsScriptReadResponse {
   success: boolean;
   rows?: Record<string, string>[];
+}
+
+interface AppsScriptWriteResponse {
+  success: boolean;
+  error?: string;
 }
 
 @Injectable()
@@ -16,13 +28,14 @@ export class AppsScriptService {
   private readonly logger = new Logger(AppsScriptService.name);
 
   private urlFor(tipo: AppsScriptTipo): string {
-    const envVar =
-      tipo === 'matricula'
-        ? 'APPS_SCRIPT_URL_MATRICULA'
-        : 'APPS_SCRIPT_URL_CORTESIA';
-    const url = process.env[envVar];
+    const envVar: Record<AppsScriptTipo, string> = {
+      matricula: 'APPS_SCRIPT_URL_MATRICULA',
+      cortesia: 'APPS_SCRIPT_URL_CORTESIA',
+      'avaliacao-fisica': 'APPS_SCRIPT_URL_AVALIACAO',
+    };
+    const url = process.env[envVar[tipo]];
     if (!url) {
-      throw new InternalServerErrorException(`${envVar} não configurada`);
+      throw new InternalServerErrorException(`${envVar[tipo]} não configurada`);
     }
     return url;
   }
@@ -92,5 +105,51 @@ export class AppsScriptService {
       throw new InternalServerErrorException('Falha ao consultar a planilha');
     }
     return data.rows ?? [];
+  }
+
+  async fetchRecords(tipo: AppsScriptTipo): Promise<AppsScriptRecord[]> {
+    const rows = await this.fetchRows(tipo);
+    return rows.map((row, index) => ({
+      ...row,
+      id: String(index + 2),
+      createdAt: parsePtBrTimestampToIso(row.timestamp ?? ''),
+    }));
+  }
+
+  async updateCortesiaPresenca(id: string, confirmada: boolean): Promise<void> {
+    const url = this.urlFor('cortesia');
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ acao: 'confirmar-presenca', id, confirmada }),
+    });
+
+    if (!response.ok) {
+      this.logger.error(
+        `Apps Script (cortesia) respondeu ${response.status} ao atualizar presença`,
+      );
+      throw new InternalServerErrorException(
+        'Falha ao atualizar a presença na planilha',
+      );
+    }
+
+    const raw = await response.text();
+    let data: AppsScriptWriteResponse;
+    try {
+      data = JSON.parse(raw) as AppsScriptWriteResponse;
+    } catch {
+      throw new InternalServerErrorException(
+        'A planilha não confirmou a atualização. Reimplante o Code.gs (veja o comentário no topo do arquivo).',
+      );
+    }
+
+    if (!data.success) {
+      if (data.error === 'not_found') {
+        throw new NotFoundException('Registro de cortesia não encontrado');
+      }
+      throw new InternalServerErrorException(
+        'Falha ao atualizar a presença na planilha',
+      );
+    }
   }
 }

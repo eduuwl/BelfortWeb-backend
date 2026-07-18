@@ -1,8 +1,8 @@
 /**
- * Academia Belfort — recebe os POSTs do backend NestJS (rotas /cortesia e /matricula)
- * e grava cada um numa aba diferente desta planilha. Também expõe uma leitura (doGet)
- * protegida por segredo, usada pelo backend para checar duplicidade de CPF e montar
- * os lembretes de aula por e-mail.
+ * Academia Belfort — recebe os POSTs do backend NestJS (rotas /cortesia, /matricula e
+ * /avaliacao-fisica) e grava cada um numa aba diferente desta planilha. Também expõe uma
+ * leitura (doGet) protegida por segredo, usada pelo backend para checar duplicidade de CPF,
+ * montar os lembretes de aula por e-mail e alimentar a área administrativa.
  *
  * Como implantar:
  * 1. Crie uma planilha nova no Google Sheets.
@@ -13,7 +13,8 @@
  *    Executar como: Eu. Quem pode acessar: Qualquer pessoa.
  * 6. Autorize as permissões pedidas (é a sua própria planilha).
  * 7. Copie a URL do App da Web e cole em backend/.env, nas variáveis:
- *    APPS_SCRIPT_URL_CORTESIA e APPS_SCRIPT_URL_MATRICULA (é a mesma URL para as duas).
+ *    APPS_SCRIPT_URL_CORTESIA, APPS_SCRIPT_URL_MATRICULA e APPS_SCRIPT_URL_AVALIACAO
+ *    (é a mesma URL para as três).
  * 8. Cole o mesmo valor de SHARED_SECRET em backend/.env, na variável APPS_SCRIPT_SHARED_SECRET.
  *
  * Se editar este arquivo depois de já ter implantado uma vez, é preciso reimplantar:
@@ -27,10 +28,11 @@
  */
 
 var SHARED_SECRET = 'TROQUE_ESTE_SEGREDO';
-var CODE_VERSION = 'v5-cref';
+var CODE_VERSION = 'v7-presenca';
 
 var CORTESIA_HEADERS = [
   'timestamp', 'nome', 'whatsapp', 'email', 'cpf', 'modalidade', 'horario', 'dia', 'datasAula', 'limitacao',
+  'presencaConfirmada',
 ];
 
 var MATRICULA_HEADERS = [
@@ -38,16 +40,31 @@ var MATRICULA_HEADERS = [
   'instagram', 'limitacao', 'modalidade', 'unidade', 'horario', 'cref', 'plano', 'aceite',
 ];
 
+var AVALIACAO_HEADERS = [
+  'timestamp', 'nome', 'whatsapp', 'unidade', 'dia', 'data', 'horario', 'valor',
+];
+
+var TIPOS = {
+  matricula: { sheet: 'Matrícula', headers: MATRICULA_HEADERS },
+  cortesia: { sheet: 'Cortesia', headers: CORTESIA_HEADERS },
+  'avaliacao-fisica': { sheet: 'Avaliação Física', headers: AVALIACAO_HEADERS },
+};
+
 function doPost(e) {
   try {
     var data = JSON.parse(e.postData.getDataAsString('UTF-8'));
 
-    var isMatricula = data.tipo === 'matricula';
-    var sheetName = isMatricula ? 'Matrícula' : 'Cortesia';
-    var headers = isMatricula ? MATRICULA_HEADERS : CORTESIA_HEADERS;
+    if (data.acao === 'confirmar-presenca') {
+      return atualizarPresencaCortesia(data);
+    }
 
-    var sheet = getOrCreateSheet(sheetName, headers);
-    var row = headers.map(function (key) {
+    var tipo = TIPOS[data.tipo];
+    if (!tipo) {
+      return jsonResponse({ success: false, error: 'tipo desconhecido: ' + data.tipo });
+    }
+
+    var sheet = getOrCreateSheet(tipo.sheet, tipo.headers);
+    var row = tipo.headers.map(function (key) {
       var value = data[key] !== undefined ? String(data[key]) : '';
       return "'" + value;
     });
@@ -59,14 +76,33 @@ function doPost(e) {
   }
 }
 
+// data.id é o número da linha na planilha (mesmo valor devolvido como "id" pelo doGet),
+// não um índice de array — vem direto do backend, que calcula id = índice + 2.
+function atualizarPresencaCortesia(data) {
+  var rowNumber = parseInt(data.id, 10);
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(TIPOS.cortesia.sheet);
+
+  if (!rowNumber || rowNumber < 2 || !sheet || rowNumber > sheet.getLastRow()) {
+    return jsonResponse({ success: false, error: 'not_found' });
+  }
+
+  var colIndex = TIPOS.cortesia.headers.indexOf('presencaConfirmada') + 1;
+  sheet.getRange(rowNumber, colIndex).setValue("'" + (data.confirmada ? 'true' : 'false'));
+
+  return jsonResponse({ success: true });
+}
+
 function doGet(e) {
   if (!e.parameter.secret || e.parameter.secret !== SHARED_SECRET) {
     return jsonResponse({ success: false, error: 'unauthorized' });
   }
 
-  var isMatricula = e.parameter.tipo === 'matricula';
-  var sheetName = isMatricula ? 'Matrícula' : 'Cortesia';
-  var headers = isMatricula ? MATRICULA_HEADERS : CORTESIA_HEADERS;
+  var tipo = TIPOS[e.parameter.tipo];
+  if (!tipo) {
+    return jsonResponse({ success: false, error: 'tipo desconhecido: ' + e.parameter.tipo });
+  }
+  var sheetName = tipo.sheet;
+  var headers = tipo.headers;
 
   var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(sheetName);
   if (!sheet || sheet.getLastRow() < 2) {
