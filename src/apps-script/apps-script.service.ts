@@ -7,7 +7,11 @@ import {
 import { parsePtBrTimestampToIso } from '../common/parse-pt-br-timestamp';
 
 export type AppsScriptTipo =
-  'matricula' | 'cortesia' | 'avaliacao-fisica' | 'avaliacao-nutricional';
+  | 'matricula'
+  | 'cortesia'
+  | 'avaliacao-fisica'
+  | 'avaliacao-nutricional'
+  | 'banners';
 
 export type AppsScriptRecord = Record<string, string> & {
   id: string;
@@ -34,6 +38,7 @@ export class AppsScriptService {
       cortesia: 'APPS_SCRIPT_URL_CORTESIA',
       'avaliacao-fisica': 'APPS_SCRIPT_URL_AVALIACAO',
       'avaliacao-nutricional': 'APPS_SCRIPT_URL_AVALIACAO_NUTRICIONAL',
+      banners: 'APPS_SCRIPT_URL_BANNERS',
     };
     const url = process.env[envVar[tipo]];
     if (!url) {
@@ -134,6 +139,19 @@ export class AppsScriptService {
       tipo,
       { acao: 'excluir', tipo, id },
       'Falha ao excluir o registro na planilha',
+      'Registro não encontrado',
+    );
+  }
+
+  async updateFields(
+    tipo: AppsScriptTipo,
+    id: string,
+    campos: Record<string, unknown>,
+  ): Promise<void> {
+    await this.postAction(
+      tipo,
+      { acao: 'atualizar-campos', tipo, id, campos },
+      'Falha ao atualizar o registro na planilha',
       'Registro não encontrado',
     );
   }

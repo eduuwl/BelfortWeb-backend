@@ -8,6 +8,7 @@ import { MatriculaModule } from './matricula/matricula.module';
 import { CortesiaModule } from './cortesia/cortesia.module';
 import { AvaliacaoFisicaModule } from './avaliacao-fisica/avaliacao-fisica.module';
 import { AvaliacaoNutricionalModule } from './avaliacao-nutricional/avaliacao-nutricional.module';
+import { BannersModule } from './banners/banners.module';
 import { ReminderModule } from './reminder/reminder.module';
 import { AuthModule } from './auth/auth.module';
 
@@ -20,6 +21,7 @@ import { AuthModule } from './auth/auth.module';
     CortesiaModule,
     AvaliacaoFisicaModule,
     AvaliacaoNutricionalModule,
+    BannersModule,
     ReminderModule,
   ],
   controllers: [AppController],

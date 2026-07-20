@@ -1,10 +1,12 @@
 /**
  * Academia Belfort — recebe os POSTs do backend NestJS (rotas /cortesia, /matricula,
- * /avaliacao-fisica e /avaliacao-nutricional) e grava cada um numa aba diferente desta planilha.
- * Também expõe uma leitura (doGet) protegida por segredo, usada pelo backend para checar
- * duplicidade de CPF, montar os lembretes de aula por e-mail e alimentar a área administrativa.
- * Suporta também update por id (confirmar presença) e exclusão por id — exclusão é soft-delete:
- * a linha é esvaziada e o conteúdo original vai pra aba "Excluídos" como backup.
+ * /avaliacao-fisica, /avaliacao-nutricional e /admin/banners) e grava cada um numa aba diferente
+ * desta planilha. Também expõe uma leitura (doGet) protegida por segredo, usada pelo backend para
+ * checar duplicidade de CPF, montar os lembretes de aula por e-mail e alimentar a área
+ * administrativa. Banners guardam só metadados aqui — a imagem em si fica no Cloudinary.
+ * Suporta também update por id (confirmar presença, ou atualizar campos genéricos) e exclusão por
+ * id — exclusão é soft-delete: a linha é esvaziada e o conteúdo original vai pra aba "Excluídos"
+ * como backup.
  *
  * Como implantar:
  * 1. Crie uma planilha nova no Google Sheets.
@@ -15,8 +17,8 @@
  *    Executar como: Eu. Quem pode acessar: Qualquer pessoa.
  * 6. Autorize as permissões pedidas (é a sua própria planilha).
  * 7. Copie a URL do App da Web e cole em backend/.env, nas variáveis:
- *    APPS_SCRIPT_URL_CORTESIA, APPS_SCRIPT_URL_MATRICULA, APPS_SCRIPT_URL_AVALIACAO e
- *    APPS_SCRIPT_URL_AVALIACAO_NUTRICIONAL (é a mesma URL pras quatro).
+ *    APPS_SCRIPT_URL_CORTESIA, APPS_SCRIPT_URL_MATRICULA, APPS_SCRIPT_URL_AVALIACAO,
+ *    APPS_SCRIPT_URL_AVALIACAO_NUTRICIONAL e APPS_SCRIPT_URL_BANNERS (é a mesma URL pras cinco).
  * 8. Cole o mesmo valor de SHARED_SECRET em backend/.env, na variável APPS_SCRIPT_SHARED_SECRET.
  *
  * Se editar este arquivo depois de já ter implantado uma vez, é preciso reimplantar:
@@ -30,7 +32,7 @@
  */
 
 var SHARED_SECRET = 'TROQUE_ESTE_SEGREDO';
-var CODE_VERSION = 'v9-exclusao';
+var CODE_VERSION = 'v10-banners';
 var EXCLUIDOS_SHEET = 'Excluídos';
 var EXCLUIDOS_HEADERS = ['origem', 'excluidoEm', 'dadosOriginais'];
 
@@ -48,12 +50,17 @@ var AVALIACAO_HEADERS = [
   'timestamp', 'nome', 'whatsapp', 'unidade', 'dia', 'data', 'horario', 'valor',
 ];
 
+var BANNERS_HEADERS = [
+  'timestamp', 'imageUrl', 'cloudinaryPublicId', 'ordem', 'ativo', 'link', 'alt',
+];
+
 var TIPOS = {
   matricula: { sheet: 'Matrícula', headers: MATRICULA_HEADERS },
   cortesia: { sheet: 'Cortesia', headers: CORTESIA_HEADERS },
   'avaliacao-fisica': { sheet: 'Avaliação Física', headers: AVALIACAO_HEADERS },
   // Mesmo formato de campos da avaliação física, só muda a aba (e o valor, que já vem no payload).
   'avaliacao-nutricional': { sheet: 'Avaliação Nutricional', headers: AVALIACAO_HEADERS },
+  banners: { sheet: 'Banners', headers: BANNERS_HEADERS },
 };
 
 function doPost(e) {
@@ -65,6 +72,9 @@ function doPost(e) {
     }
     if (data.acao === 'excluir') {
       return excluirRegistro(data);
+    }
+    if (data.acao === 'atualizar-campos') {
+      return atualizarCampos(data);
     }
 
     var tipo = TIPOS[data.tipo];
@@ -97,6 +107,33 @@ function atualizarPresencaCortesia(data) {
 
   var colIndex = TIPOS.cortesia.headers.indexOf('presencaConfirmada') + 1;
   sheet.getRange(rowNumber, colIndex).setValue("'" + (data.confirmada ? 'true' : 'false'));
+
+  return jsonResponse({ success: true });
+}
+
+// Update genérico por id: recebe data.tipo, data.id e data.campos (objeto { coluna: valor }),
+// e escreve só as colunas presentes em data.campos que existirem em tipo.headers. Diferente de
+// atualizarPresencaCortesia (que é fixo numa coluna só), serve pra qualquer recurso que precise
+// atualizar um subconjunto de campos por id — hoje usado só pelo PATCH /admin/banners/:id.
+function atualizarCampos(data) {
+  var tipo = TIPOS[data.tipo];
+  if (!tipo) {
+    return jsonResponse({ success: false, error: 'tipo desconhecido: ' + data.tipo });
+  }
+
+  var rowNumber = parseInt(data.id, 10);
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(tipo.sheet);
+  if (!rowNumber || rowNumber < 2 || !sheet || rowNumber > sheet.getLastRow()) {
+    return jsonResponse({ success: false, error: 'not_found' });
+  }
+
+  var campos = data.campos || {};
+  Object.keys(campos).forEach(function (key) {
+    var colIndex = tipo.headers.indexOf(key) + 1;
+    if (colIndex > 0) {
+      sheet.getRange(rowNumber, colIndex).setValue("'" + String(campos[key]));
+    }
+  });
 
   return jsonResponse({ success: true });
 }

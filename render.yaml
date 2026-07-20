@@ -22,8 +22,17 @@ services:
         sync: false
       - key: APPS_SCRIPT_URL_AVALIACAO_NUTRICIONAL
         sync: false
+      - key: APPS_SCRIPT_URL_BANNERS
+        sync: false
       # Precisa bater com SHARED_SECRET no topo do Code.gs.
       - key: APPS_SCRIPT_SHARED_SECRET
+        sync: false
+      # Credenciais do Cloudinary (cloudinary.com) — armazenamento das imagens dos banners.
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
         sync: false
       # Opcionais — sem eles o lembrete de aula por e-mail só fica desativado (não quebra o resto).
       - key: GMAIL_USER
