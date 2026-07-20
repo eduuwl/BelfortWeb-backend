@@ -3,11 +3,20 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 
+function parseAllowedOrigins(): string[] {
+  const raw = process.env.FRONTEND_ORIGIN ?? 'http://localhost:3000';
+  return raw
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+}
+
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  const allowedOrigins = parseAllowedOrigins();
   app.enableCors({
-    origin: process.env.FRONTEND_ORIGIN ?? 'http://localhost:3000',
+    origin: allowedOrigins,
   });
 
   app.useGlobalPipes(
