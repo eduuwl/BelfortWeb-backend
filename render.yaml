@@ -8,8 +8,11 @@ services:
     startCommand: npm run start:prod
     healthCheckPath: /
     envVars:
-      # Domínio de produção do site (Next.js) — usado só pro CORS dos endpoints públicos
-      # (POST /matricula, /cortesia, /avaliacao-fisica, /avaliacao-nutricional).
+      # Origens liberadas no CORS pros endpoints públicos (lista separada por vírgula).
+      # Precisa incluir o domínio de produção E http://localhost:3000 (+ 127.0.0.1:3000) —
+      # o contrato do frontend exige isso pra dar pra testar os formulários localmente contra
+      # este backend de produção. Ex:
+      # https://academiabelfort.com.br,https://www.academiabelfort.com.br,http://localhost:3000,http://127.0.0.1:3000
       - key: FRONTEND_ORIGIN
         sync: false
       # URL do Web App do Apps Script (a mesma URL nas quatro variáveis — ver comentário
