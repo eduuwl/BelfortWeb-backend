@@ -22,6 +22,10 @@ export class MatriculaService {
     return paginate(records, page, limit);
   }
 
+  async updateObservacao(id: string, observacao: string): Promise<void> {
+    await this.appsScript.updateFields('matricula', id, { observacao });
+  }
+
   async deleteById(id: string): Promise<void> {
     await this.appsScript.deleteRecord('matricula', id);
   }

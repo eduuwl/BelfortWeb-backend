@@ -22,6 +22,12 @@ export class AvaliacaoNutricionalService {
     return paginate(records, page, limit);
   }
 
+  async updateObservacao(id: string, observacao: string): Promise<void> {
+    await this.appsScript.updateFields('avaliacao-nutricional', id, {
+      observacao,
+    });
+  }
+
   async deleteById(id: string): Promise<void> {
     await this.appsScript.deleteRecord('avaliacao-nutricional', id);
   }

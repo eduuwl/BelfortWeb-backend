@@ -11,6 +11,7 @@ export interface CortesiaRecord {
   email: string;
   cpf: string;
   modalidade: string;
+  unidade: string;
   horario: string;
   dia: string;
   datasAula: string;
@@ -18,6 +19,7 @@ export interface CortesiaRecord {
   id: string;
   createdAt: string;
   presencaConfirmada: boolean;
+  observacao: string;
 }
 
 @Injectable()
@@ -36,6 +38,7 @@ export class CortesiaService {
       email: record.email ?? '',
       cpf: record.cpf ?? '',
       modalidade: record.modalidade ?? '',
+      unidade: record.unidade ?? '',
       horario: record.horario ?? '',
       dia: record.dia ?? '',
       datasAula: record.datasAula ?? '',
@@ -43,12 +46,17 @@ export class CortesiaService {
       id: record.id,
       createdAt: record.createdAt,
       presencaConfirmada: record.presencaConfirmada === 'true',
+      observacao: record.observacao ?? '',
     }));
     return paginate(withPresenca, page, limit);
   }
 
   async updatePresenca(id: string, confirmada: boolean): Promise<void> {
     await this.appsScript.updateCortesiaPresenca(id, confirmada);
+  }
+
+  async updateObservacao(id: string, observacao: string): Promise<void> {
+    await this.appsScript.updateFields('cortesia', id, { observacao });
   }
 
   async deleteById(id: string): Promise<void> {

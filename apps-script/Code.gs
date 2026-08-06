@@ -32,22 +32,30 @@
  */
 
 var SHARED_SECRET = 'TROQUE_ESTE_SEGREDO';
-var CODE_VERSION = 'v10-banners';
+var CODE_VERSION = 'v11-unidade-cortesia-observacao';
 var EXCLUIDOS_SHEET = 'Excluídos';
 var EXCLUIDOS_HEADERS = ['origem', 'excluidoEm', 'dadosOriginais'];
 
+// Importante: pra planilhas que já estão em produção (todas, exceto Excluídos), qualquer
+// coluna nova precisa ser adicionada SEMPRE no final do array de headers, nunca no meio.
+// doPost/doGet leem e escrevem por posição (índice do array = coluna física da planilha) — a
+// aba já existente tem a linha 1 (cabeçalho) e as colunas de dados fixas na ordem antiga, então
+// inserir uma coluna no meio desalinharia todos os dados já gravados. Ao adicionar uma coluna
+// no final, dá pra digitar o nome dela manualmente na célula do cabeçalho (linha 1) da aba já
+// existente — isso é só cosmético, a leitura/escrita funciona por posição independente do texto
+// que estiver na célula do cabeçalho.
 var CORTESIA_HEADERS = [
   'timestamp', 'nome', 'whatsapp', 'email', 'cpf', 'modalidade', 'horario', 'dia', 'datasAula', 'limitacao',
-  'presencaConfirmada',
+  'presencaConfirmada', 'unidade', 'observacao',
 ];
 
 var MATRICULA_HEADERS = [
   'timestamp', 'nome', 'nascimento', 'email', 'cpf', 'endereco', 'whatsapp',
-  'instagram', 'limitacao', 'modalidade', 'unidade', 'horario', 'cref', 'plano', 'aceite',
+  'instagram', 'limitacao', 'modalidade', 'unidade', 'horario', 'cref', 'plano', 'aceite', 'observacao',
 ];
 
 var AVALIACAO_HEADERS = [
-  'timestamp', 'nome', 'whatsapp', 'unidade', 'dia', 'data', 'horario', 'valor',
+  'timestamp', 'nome', 'whatsapp', 'unidade', 'dia', 'data', 'horario', 'valor', 'observacao',
 ];
 
 var BANNERS_HEADERS = [

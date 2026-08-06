@@ -22,6 +22,9 @@ export class CreateCortesiaDto {
   modalidade: string;
 
   @IsString()
+  unidade: string;
+
+  @IsString()
   horario: string;
 
   @IsString()

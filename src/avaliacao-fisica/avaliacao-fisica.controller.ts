@@ -5,11 +5,13 @@ import {
   Get,
   HttpCode,
   Param,
+  Patch,
   Post,
   Query,
   UseGuards,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { UpdateObservacaoDto } from '../common/dto/update-observacao.dto';
 import { AvaliacaoFisicaService } from './avaliacao-fisica.service';
 import { CreateAvaliacaoFisicaDto } from './dto/create-avaliacao-fisica.dto';
 
@@ -30,6 +32,17 @@ export class AvaliacaoFisicaController {
   @UseGuards(JwtAuthGuard)
   async list(@Query('page') page?: string, @Query('limit') limit?: string) {
     return this.avaliacaoFisicaService.list(page, limit);
+  }
+
+  @Patch(':id/observacao')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(200)
+  async updateObservacao(
+    @Param('id') id: string,
+    @Body() dto: UpdateObservacaoDto,
+  ) {
+    await this.avaliacaoFisicaService.updateObservacao(id, dto.observacao);
+    return { success: true };
   }
 
   @Delete(':id')

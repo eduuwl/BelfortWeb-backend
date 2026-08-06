@@ -22,6 +22,12 @@ export class AvaliacaoFisicaService {
     return paginate(records, page, limit);
   }
 
+  async updateObservacao(id: string, observacao: string): Promise<void> {
+    await this.appsScript.updateFields('avaliacao-fisica', id, {
+      observacao,
+    });
+  }
+
   async deleteById(id: string): Promise<void> {
     await this.appsScript.deleteRecord('avaliacao-fisica', id);
   }

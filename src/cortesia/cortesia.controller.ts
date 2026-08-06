@@ -11,6 +11,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { UpdateObservacaoDto } from '../common/dto/update-observacao.dto';
 import { CreateCortesiaDto } from './dto/create-cortesia.dto';
 import { UpdatePresencaDto } from './dto/update-presenca.dto';
 import { CortesiaService } from './cortesia.service';
@@ -40,6 +41,17 @@ export class CortesiaController {
     @Body() dto: UpdatePresencaDto,
   ) {
     await this.cortesiaService.updatePresenca(id, dto.confirmada);
+    return { success: true };
+  }
+
+  @Patch(':id/observacao')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(200)
+  async updateObservacao(
+    @Param('id') id: string,
+    @Body() dto: UpdateObservacaoDto,
+  ) {
+    await this.cortesiaService.updateObservacao(id, dto.observacao);
     return { success: true };
   }
 
