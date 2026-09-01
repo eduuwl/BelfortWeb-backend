@@ -26,6 +26,10 @@ export class MatriculaService {
     await this.appsScript.updateFields('matricula', id, { observacao });
   }
 
+  async updateNumeroMatricula(id: string, numeroMatricula: string): Promise<void> {
+    await this.appsScript.updateFields('matricula', id, { numeroMatricula });
+  }
+
   async deleteById(id: string): Promise<void> {
     await this.appsScript.deleteRecord('matricula', id);
   }

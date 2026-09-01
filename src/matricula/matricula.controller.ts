@@ -13,6 +13,7 @@ import {
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { UpdateObservacaoDto } from '../common/dto/update-observacao.dto';
 import { CreateMatriculaDto } from './dto/create-matricula.dto';
+import { UpdateNumeroMatriculaDto } from './dto/update-numero-matricula.dto';
 import { MatriculaService } from './matricula.service';
 
 @Controller('matricula')
@@ -40,6 +41,17 @@ export class MatriculaController {
     @Body() dto: UpdateObservacaoDto,
   ) {
     await this.matriculaService.updateObservacao(id, dto.observacao);
+    return { success: true };
+  }
+
+  @Patch(':id/numero-matricula')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(200)
+  async updateNumeroMatricula(
+    @Param('id') id: string,
+    @Body() dto: UpdateNumeroMatriculaDto,
+  ) {
+    await this.matriculaService.updateNumeroMatricula(id, dto.numeroMatricula);
     return { success: true };
   }
 

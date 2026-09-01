@@ -32,7 +32,7 @@
  */
 
 var SHARED_SECRET = 'TROQUE_ESTE_SEGREDO';
-var CODE_VERSION = 'v11-unidade-cortesia-observacao';
+var CODE_VERSION = 'v12-matricula-numero';
 var EXCLUIDOS_SHEET = 'Excluídos';
 var EXCLUIDOS_HEADERS = ['origem', 'excluidoEm', 'dadosOriginais'];
 
@@ -52,6 +52,7 @@ var CORTESIA_HEADERS = [
 var MATRICULA_HEADERS = [
   'timestamp', 'nome', 'nascimento', 'email', 'cpf', 'endereco', 'whatsapp',
   'instagram', 'limitacao', 'modalidade', 'unidade', 'horario', 'cref', 'plano', 'aceite', 'observacao',
+  'numeroMatricula',
 ];
 
 var AVALIACAO_HEADERS = [
