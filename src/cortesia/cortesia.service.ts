@@ -1,6 +1,8 @@
 import { ConflictException, Injectable } from '@nestjs/common';
 import { AppsScriptService } from '../apps-script/apps-script.service';
+import { filterByUnidade } from '../common/filter-by-unidade';
 import { onlyDigits } from '../common/only-digits';
+import { parsePtBrDate } from '../common/parse-pt-br-date';
 import { Paginated, paginate } from '../common/paginate';
 import { CreateCortesiaDto } from './dto/create-cortesia.dto';
 
@@ -29,9 +31,14 @@ export class CortesiaService {
   async list(
     page?: string,
     limit?: string,
+    unidade?: string,
   ): Promise<Paginated<CortesiaRecord>> {
     const records = await this.appsScript.fetchRecords('cortesia');
-    const withPresenca: CortesiaRecord[] = records.map((record) => ({
+    const withPresenca: CortesiaRecord[] = filterByUnidade(
+      records,
+      unidade,
+      (r) => r.unidade ?? '',
+    ).map((record) => ({
       timestamp: record.timestamp ?? '',
       nome: record.nome ?? '',
       whatsapp: record.whatsapp ?? '',
@@ -48,6 +55,20 @@ export class CortesiaService {
       presencaConfirmada: record.presencaConfirmada === 'true',
       observacao: record.observacao ?? '',
     }));
+
+    // Organiza por data da aula (a mais próxima primeiro), não pela ordem de inscrição na
+    // planilha — com muita cortesia por dia, a recepção precisa ver a agenda em ordem
+    // cronológica. Registros sem data válida (não deveria acontecer, mas por segurança) vão
+    // pro final, sem quebrar a ordenação dos demais.
+    withPresenca.sort((a, b) => {
+      const dateA = parsePtBrDate(a.datasAula);
+      const dateB = parsePtBrDate(b.datasAula);
+      if (!dateA && !dateB) return 0;
+      if (!dateA) return 1;
+      if (!dateB) return -1;
+      return dateA.getTime() - dateB.getTime();
+    });
+
     return paginate(withPresenca, page, limit);
   }
 

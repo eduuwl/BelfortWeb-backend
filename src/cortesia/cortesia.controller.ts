@@ -29,8 +29,12 @@ export class CortesiaController {
 
   @Get()
   @UseGuards(JwtAuthGuard)
-  async list(@Query('page') page?: string, @Query('limit') limit?: string) {
-    return this.cortesiaService.list(page, limit);
+  async list(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('unidade') unidade?: string,
+  ) {
+    return this.cortesiaService.list(page, limit, unidade);
   }
 
   @Patch(':id/presenca')

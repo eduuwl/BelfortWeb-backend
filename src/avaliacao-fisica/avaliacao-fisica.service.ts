@@ -3,6 +3,7 @@ import {
   AppsScriptRecord,
   AppsScriptService,
 } from '../apps-script/apps-script.service';
+import { filterByUnidade } from '../common/filter-by-unidade';
 import { Paginated, paginate } from '../common/paginate';
 import { CreateAvaliacaoFisicaDto } from './dto/create-avaliacao-fisica.dto';
 
@@ -17,9 +18,14 @@ export class AvaliacaoFisicaService {
   async list(
     page?: string,
     limit?: string,
+    unidade?: string,
   ): Promise<Paginated<AppsScriptRecord>> {
     const records = await this.appsScript.fetchRecords('avaliacao-fisica');
-    return paginate(records, page, limit);
+    return paginate(
+      filterByUnidade(records, unidade, (r) => r.unidade ?? ''),
+      page,
+      limit,
+    );
   }
 
   async updateObservacao(id: string, observacao: string): Promise<void> {

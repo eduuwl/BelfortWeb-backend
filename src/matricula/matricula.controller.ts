@@ -29,8 +29,12 @@ export class MatriculaController {
 
   @Get()
   @UseGuards(JwtAuthGuard)
-  async list(@Query('page') page?: string, @Query('limit') limit?: string) {
-    return this.matriculaService.list(page, limit);
+  async list(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('unidade') unidade?: string,
+  ) {
+    return this.matriculaService.list(page, limit, unidade);
   }
 
   @Patch(':id/observacao')

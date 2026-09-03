@@ -30,8 +30,12 @@ export class AvaliacaoFisicaController {
 
   @Get()
   @UseGuards(JwtAuthGuard)
-  async list(@Query('page') page?: string, @Query('limit') limit?: string) {
-    return this.avaliacaoFisicaService.list(page, limit);
+  async list(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('unidade') unidade?: string,
+  ) {
+    return this.avaliacaoFisicaService.list(page, limit, unidade);
   }
 
   @Patch(':id/observacao')

@@ -3,6 +3,7 @@ import {
   AppsScriptRecord,
   AppsScriptService,
 } from '../apps-script/apps-script.service';
+import { filterByUnidade } from '../common/filter-by-unidade';
 import { Paginated, paginate } from '../common/paginate';
 import { CreateMatriculaDto } from './dto/create-matricula.dto';
 
@@ -17,16 +18,24 @@ export class MatriculaService {
   async list(
     page?: string,
     limit?: string,
+    unidade?: string,
   ): Promise<Paginated<AppsScriptRecord>> {
     const records = await this.appsScript.fetchRecords('matricula');
-    return paginate(records, page, limit);
+    return paginate(
+      filterByUnidade(records, unidade, (r) => r.unidade ?? ''),
+      page,
+      limit,
+    );
   }
 
   async updateObservacao(id: string, observacao: string): Promise<void> {
     await this.appsScript.updateFields('matricula', id, { observacao });
   }
 
-  async updateNumeroMatricula(id: string, numeroMatricula: string): Promise<void> {
+  async updateNumeroMatricula(
+    id: string,
+    numeroMatricula: string,
+  ): Promise<void> {
     await this.appsScript.updateFields('matricula', id, { numeroMatricula });
   }
 
