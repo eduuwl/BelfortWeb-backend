@@ -14,6 +14,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { SkipThrottle } from '@nestjs/throttler';
 import { memoryStorage } from 'multer';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { BannersService } from './banners.service';
@@ -22,8 +23,12 @@ import { UpdateBannerDto } from './dto/update-banner.dto';
 
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 
+// Todo o controller fica atrás de JwtAuthGuard — o rate limit padrão de 5/min existe pra
+// proteger endpoints públicos de abuso, não faz sentido aqui (um JWT válido já é a proteção
+// real), e paginar/editar banners no painel facilmente passa de 5 requisições por minuto.
 @Controller('admin/banners')
 @UseGuards(JwtAuthGuard)
+@SkipThrottle()
 export class AdminBannersController {
   constructor(private readonly bannersService: BannersService) {}
 

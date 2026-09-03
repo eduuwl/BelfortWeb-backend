@@ -10,6 +10,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
+import { SkipThrottle } from '@nestjs/throttler';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { UpdateObservacaoDto } from '../common/dto/update-observacao.dto';
 import { CreateCortesiaDto } from './dto/create-cortesia.dto';
@@ -27,8 +28,13 @@ export class CortesiaController {
     return { success: true };
   }
 
+  // Rotas administrativas (atrás de JwtAuthGuard) ficam fora do rate limit padrão de 5/min —
+  // esse limite existe pra proteger os endpoints públicos de abuso, mas o painel logado pagina,
+  // filtra por unidade e edita registro por registro, gerando bem mais de 5 requisições por
+  // minuto num uso normal. Um JWT válido já é a proteção real aqui.
   @Get()
   @UseGuards(JwtAuthGuard)
+  @SkipThrottle()
   async list(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
@@ -39,6 +45,7 @@ export class CortesiaController {
 
   @Patch(':id/presenca')
   @UseGuards(JwtAuthGuard)
+  @SkipThrottle()
   @HttpCode(200)
   async updatePresenca(
     @Param('id') id: string,
@@ -50,6 +57,7 @@ export class CortesiaController {
 
   @Patch(':id/observacao')
   @UseGuards(JwtAuthGuard)
+  @SkipThrottle()
   @HttpCode(200)
   async updateObservacao(
     @Param('id') id: string,
@@ -61,6 +69,7 @@ export class CortesiaController {
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
+  @SkipThrottle()
   @HttpCode(200)
   async delete(@Param('id') id: string) {
     await this.cortesiaService.deleteById(id);
