@@ -9,7 +9,9 @@ import { CreateCortesiaDto } from './dto/create-cortesia.dto';
 export interface CortesiaRecord {
   timestamp: string;
   nome: string;
+  nascimento: string;
   whatsapp: string;
+  whatsappEmergencia: string;
   email: string;
   cpf: string;
   modalidade: string;
@@ -22,6 +24,8 @@ export interface CortesiaRecord {
   createdAt: string;
   presencaConfirmada: boolean;
   observacao: string;
+  responsavelNome: string;
+  responsavelWhatsapp: string;
 }
 
 @Injectable()
@@ -41,7 +45,9 @@ export class CortesiaService {
     ).map((record) => ({
       timestamp: record.timestamp ?? '',
       nome: record.nome ?? '',
+      nascimento: record.nascimento ?? '',
       whatsapp: record.whatsapp ?? '',
+      whatsappEmergencia: record.whatsappEmergencia ?? '',
       email: record.email ?? '',
       cpf: record.cpf ?? '',
       modalidade: record.modalidade ?? '',
@@ -54,6 +60,8 @@ export class CortesiaService {
       createdAt: record.createdAt,
       presencaConfirmada: record.presencaConfirmada === 'true',
       observacao: record.observacao ?? '',
+      responsavelNome: record.responsavelNome ?? '',
+      responsavelWhatsapp: record.responsavelWhatsapp ?? '',
     }));
 
     // Organiza por data da aula (a mais próxima primeiro), não pela ordem de inscrição na

@@ -32,7 +32,7 @@
  */
 
 var SHARED_SECRET = 'TROQUE_ESTE_SEGREDO';
-var CODE_VERSION = 'v12-matricula-numero';
+var CODE_VERSION = 'v13-responsavel-emergencia';
 var EXCLUIDOS_SHEET = 'Excluídos';
 var EXCLUIDOS_HEADERS = ['origem', 'excluidoEm', 'dadosOriginais'];
 
@@ -47,12 +47,18 @@ var EXCLUIDOS_HEADERS = ['origem', 'excluidoEm', 'dadosOriginais'];
 var CORTESIA_HEADERS = [
   'timestamp', 'nome', 'whatsapp', 'email', 'cpf', 'modalidade', 'horario', 'dia', 'datasAula', 'limitacao',
   'presencaConfirmada', 'unidade', 'observacao',
+  // Adicionadas na v13: nascimento (pra saber se o aluno é menor de idade), whatsappEmergencia
+  // (segundo contato, obrigatório pra qualquer aluno) e os dados do responsável (obrigatórios só
+  // quando o aluno é menor — "" quando não se aplica).
+  'nascimento', 'whatsappEmergencia', 'responsavelNome', 'responsavelWhatsapp',
 ];
 
 var MATRICULA_HEADERS = [
   'timestamp', 'nome', 'nascimento', 'email', 'cpf', 'endereco', 'whatsapp',
   'instagram', 'limitacao', 'modalidade', 'unidade', 'horario', 'cref', 'plano', 'aceite', 'observacao',
   'numeroMatricula',
+  // Adicionadas na v13: mesma lógica da Cortesia acima (ver comentário lá).
+  'whatsappEmergencia', 'responsavelNome', 'responsavelWhatsapp',
 ];
 
 var AVALIACAO_HEADERS = [

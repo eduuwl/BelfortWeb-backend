@@ -27,6 +27,12 @@ export class CreateMatriculaDto {
   whatsapp: string;
 
   @IsString()
+  @Matches(/^\d{10,11}$/, {
+    message: 'whatsappEmergencia deve conter DDD + número (10 ou 11 dígitos)',
+  })
+  whatsappEmergencia: string;
+
+  @IsString()
   instagram: string;
 
   @IsString()
@@ -46,6 +52,15 @@ export class CreateMatriculaDto {
 
   @IsString()
   plano: string;
+
+  // Obrigatório apenas quando o aluno é menor de idade — regra aplicada no frontend (mesmo
+  // padrão de `cref`, que só é obrigatório para modalidade "personal"); aqui só valida o tipo.
+  // "" quando o aluno é maior de idade.
+  @IsString()
+  responsavelNome: string;
+
+  @IsString()
+  responsavelWhatsapp: string;
 
   @IsString()
   aceite: string;

@@ -7,10 +7,20 @@ export class CreateCortesiaDto {
   nome: string;
 
   @IsString()
+  @MinLength(1)
+  nascimento: string;
+
+  @IsString()
   @Matches(/^\d{10,11}$/, {
     message: 'whatsapp deve conter DDD + número (10 ou 11 dígitos)',
   })
   whatsapp: string;
+
+  @IsString()
+  @Matches(/^\d{10,11}$/, {
+    message: 'whatsappEmergencia deve conter DDD + número (10 ou 11 dígitos)',
+  })
+  whatsappEmergencia: string;
 
   @IsEmail()
   email: string;
@@ -35,4 +45,12 @@ export class CreateCortesiaDto {
 
   @IsString()
   limitacao: string;
+
+  // Obrigatório apenas quando o aluno é menor de idade — regra aplicada no frontend; aqui só
+  // valida o tipo. "" quando o aluno é maior de idade.
+  @IsString()
+  responsavelNome: string;
+
+  @IsString()
+  responsavelWhatsapp: string;
 }
